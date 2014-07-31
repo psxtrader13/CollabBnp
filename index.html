@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+
+<html lang="en-us">
+
+<head>
+<meta charset="utf-8">
+<title>Build & Price Prototype</title>
+
+<style type="text/css">
+
+    <style>
+
+  body {
+   font: 24px Helvetica;
+   background: #999999;
+  }
+
+  #main {
+   min-height: 500px;
+   margin: 0px;
+   padding: 0px;
+   display: -webkit-flex;
+   display:         flex;
+   -webkit-flex-flow: row;
+           flex-flow: row;
+   }
+ 
+  #main > article {
+   margin: 4px;
+   padding: 5px;
+   border: 1px solid #cccc33;
+   border-radius: 7pt;
+   background: #ffffff;
+   -webkit-flex: 3 1 25%;
+           flex: 3 1 25%;
+   -webkit-order: 2;
+           order: 2;
+   }
+  
+  #main > nav {
+   margin: 4px;
+   padding: 5px;
+   border: 1px solid #000;
+   border-radius: 7pt;
+   /*background: #ccccff;*/
+   -webkit-flex: 1 6 25%;
+           flex: 1 6 25%;
+   -webkit-order: 1;
+           order: 1;
+   }
+  
+  #main > aside {
+   margin: 4px;
+   padding: 5px;
+   border: 1px solid #000;
+   border-radius: 7pt;
+   /*background: #ccccff;*/
+   -webkit-flex: 1 6 50%;
+           flex: 1 6 50%;
+   -webkit-order: 3;
+           order: 3;
+   }
+ 
+  header, footer {
+   display: block;
+   margin: 4px;
+   padding: 5px;
+   min-height: 100px;
+   border: 1px solid #000;
+   border-radius: 7pt;
+   /*background: #ffeebb;*/
+   }
+ 
+  /* Too narrow to support three columns */
+  @media all and (max-width: 640px) {
+  
+   #main, #page {
+    -webkit-flex-flow: column;
+            flex-flow: column;
+            flex-direction: column;
+   }
+
+   #main > article, #main > nav, #main > aside {
+    /* Return them to document order */
+    -webkit-order: 0;
+            order: 0;
+   }
+  
+   #main > nav, #main > aside, header, footer {
+    min-height: 50px;
+    max-height: 50px;
+   }
+  }
+
+ </style>    
+</style>
+
+<script>
+
+//var FILE_ID = '0B1uIpxxgvBlPaldBdGxoelljQkk';
+//var FILE_ID = '0B1uIpxxgvBlPaldBdGxoelljQkl';
+//var FILE_ID = '0B1uIpxxgvBlPaldBdGxoelljQkm';
+var FILE_ID = '0B1uIpxxgvBlPV2JMczMtUVFucTQ';
+var CLIENT_ID = '282737131766-h6uure6t6pv28oitiapumt7g60q5bsb2.apps.googleusercontent.com';
+var SCOPES = [
+  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/drive.install',
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile'
+  // Add other scopes needed by your application.
+];
+
+
+
+
+var my_doc;
+var model;
+
+
+
+
+
+
+
+
+
+
+
+/* ************************************
+******* AUTHORIZATION ************
+*************************************** */
+/**
+* Called when the client library is loaded.
+*/
+function handleClientLoad() {
+    checkAuth();
+}
+
+/**
+* Check if the current user has authorized the application.
+*/
+function checkAuth() {
+    gapi.auth.authorize(
+        {'client_id': CLIENT_ID, 'scope': SCOPES.join(' '), 'immediate': true},
+        handleAuthResult);
+}
+
+/**
+* Called when authorization server replies.
+*
+* @param {Object} authResult Authorization result.
+*/
+function handleAuthResult(authResult) {
+    console.log(authResult);
+    if (authResult && !authResult.error) {
+        // Access token has been successfully retrieved, requests can be sent to the API
+        client_authorized();
+    } else {
+        // No access token could be retrieved, force the authorization flow.
+        gapi.auth.authorize(
+            {'client_id': CLIENT_ID, 'scope': SCOPES, 'immediate': false},
+            handleAuthResult);
+    }
+    
+}
+
+
+
+
+function client_authorized() {
+
+    gapi.load("auth:client,drive-realtime,drive-share", gapi_loaded);
+
+}
+
+
+
+function gapi_loaded() {
+
+
+  // Create file (do this once)
+  /*
+  gapi.client.load('drive', 'v2', function() {
+    gapi.client.drive.files.insert({
+      'resource': {
+        mimeType: 'application/vnd.google-apps.drive-sdk',
+        title: 'CollabBnP'
+      }
+    }).execute(function(x) { console.log(x); });
+  });
+  */
+  
+  
+
+
+    // Load file
+    gapi.drive.realtime.load(FILE_ID, file_loaded, model_created, load_error);	 
+    
+}
+
+
+function file_loaded(doc) {
+	console.log('file loaded');
+	console.log(doc);
+	
+	my_doc = doc;
+	
+	init();
+	
+}
+
+function model_created(model) {
+	console.log('model created');
+	console.log(model);
+
+}
+
+function load_error(x) {
+	console.log('load error');
+	console.log(x);
+}
+
+
+
+
+
+
+var notes;
+var color;
+var list;
+
+
+function init() {
+    
+    toastr.options = {
+      "timeOut": "2500"
+    }
+
+
+    model = my_doc.getModel();
+
+    //var string = model.createString("Hello Realtime World!");
+    //model.getRoot().set("notes" , string);
+    //var string2 = model.createString("BK");
+    //model.getRoot().set("color" , string2);
+    //var accessories = model.createList();
+    //model.getRoot().set("accessories" , accessories);
+
+    
+    // Get "notes"
+    notes = model.getRoot().get("notes");
+
+    // Get color
+    color = model.getRoot().get("color");
+    
+    // Get accessories
+    list = model.getRoot().get("accessories");
+    
+
+    refresh_notes();
+    
+    refresh_color();
+    
+    refresh_accessories();
+    
+    refresh_collaborators();
+    
+    
+    // Connect the event to the listener.
+    notes.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, notes_changed);
+    notes.addEventListener(gapi.drive.realtime.EventType.TEXT_DELETED, notes_changed);
+    
+
+    color.addEventListener(gapi.drive.realtime.EventType.TEXT_INSERTED, color_changed);
+    //color.addEventListener(gapi.drive.realtime.EventType.TEXT_DELETED, color_changed);
+
+    list.addEventListener(gapi.drive.realtime.EventType.VALUES_ADDED, accessories_changed);
+    list.addEventListener(gapi.drive.realtime.EventType.VALUES_REMOVED, accessories_changed);
+    list.addEventListener(gapi.drive.realtime.EventType.VALUES_SET, accessories_changed);
+
+    
+    my_doc.addEventListener(gapi.drive.realtime.EventType.COLLABORATOR_LEFT, user_left);
+	my_doc.addEventListener(gapi.drive.realtime.EventType.COLLABORATOR_JOINED, user_joined);
+	
+
+    
+    
+}
+
+function notes_changed(evt) {
+    console.log('notes changed');
+    console.log(evt);
+    console.log(evt.isLocal);
+
+    if (!evt.isLocal) {
+        refresh_notes();
+    }
+
+}
+
+function color_changed(evt) {
+    console.log('color changed');
+    console.log(evt);
+    console.log(evt.isLocal);
+    
+    
+    //if (color.getText() == $('#car_img').attr('data-color') ) return;
+    
+
+    if (!evt.isLocal) {
+        toastr.info(getUserNameFromSessionId(evt.sessionId) + ' changed the color to ' + $(".clr[data-color='" + color.getText() + "']").attr('data-colorname'));
+        refresh_color();
+    }
+    refresh_accessories();
+
+}
+
+function accessories_changed(evt) {
+
+    console.log('accessories changed');
+    console.log(evt);
+    console.log(evt.isLocal);
+    
+    
+    if (!evt.isLocal) {
+        switch (evt.type){
+            case 'values_added':
+                toastr.info(getUserNameFromSessionId(evt.sessionId) + ' added the accessories ' + evt.values.join(', '));
+                break;
+            case 'values_removed':
+                toastr.info(getUserNameFromSessionId(evt.sessionId) + ' removed the accessories ' + evt.values.join(', '));
+                break;
+        }
+        
+    }    
+    refresh_accessories();
+}
+
+
+function user_left(evt) {
+    console.log('user left');
+    console.log(evt);
+    
+    toastr.info(evt.collaborator.displayName + ' has left.')
+
+    refresh_collaborators();
+}
+
+function user_joined(evt) {
+    console.log('user joined');
+    console.log(evt);
+
+    console.log(evt.collaborator);
+    
+    toastr.info(evt.collaborator.displayName + ' has joined.')
+    
+    refresh_collaborators();
+}
+
+
+
+
+function refresh_collaborators() {
+    
+    var sHtml = '';
+    
+	var cols = my_doc.getCollaborators();
+	for(var i = 0; i < cols.length; i++){
+	    console.log(cols[i]);
+		if(cols[i].isMe){
+			sHtml += '<img src="' + cols[i].photoUrl + '" width="64" /><span class="user" style="color: ' + cols[i].color + ';" data-name="' + cols[i].displayName + '" data-sessionid="' + cols[i].sessionId + '"> Me(' + cols[i].displayName + ')</span><br />';
+		} else {
+		    sHtml += '<img src="' + cols[i].photoUrl + '" width="64" /><span class="user" style="color: ' + cols[i].color + ';" data-name="' + cols[i].displayName + '" data-sessionid="' + cols[i].sessionId + '"> ' + cols[i].displayName + '</span><br />';
+		}
+	    
+	    sHtml += '<br />';
+	}
+	
+	document.getElementById('collaborators_view').innerHTML = sHtml;
+}
+
+function refresh_notes() {
+
+    document.getElementById('txt_notes').value = notes.getText();
+
+}
+
+function refresh_color() {
+
+    $('#car_img').attr('src' , 'http://automobiles.honda.com/images/2014/accord-sedan/configurations/base-cars/' + color.getText() + '_touring_34FRONT.png');
+    $('#car_img').attr('data-color' , color.getText() );
+
+
+}
+
+function refresh_accessories() {
+    
+    $('img.overlay').remove();
+    
+    // Turn off all Xs
+    $('.ex').hide();
+
+    var tlist = list.asArray();
+    console.log(tlist);
+    for (var i = 0; i < tlist.length; i++) {
+        var accessory_name = tlist[i];
+        var accessory_overlay = '';
+        
+        $('div.acc').each(function() {
+           if ($(this).text() == accessory_name) {
+               accessory_overlay = $(this).attr('data-overlay');
+                // Turn on X
+                $(this).next('.ex').show();
+                console.log($(this).next('.ex'));
+
+               return false;
+          } 
+        });
+        
+        accessory_overlay = accessory_overlay.replace('%CLR%' , color.getText());
+        
+        $('#car_stack').prepend('<img class="overlay" style="position: absolute; left: 0; top: 0; width: 80%;" data-name="' + accessory_name + '" src="' + accessory_overlay + '" />');
+        
+    }
+
+    
+    
+    
+    
+    
+    //list.setList(list);
+    
+    
+}
+
+
+function user_changed_notes() {
+    
+    console.log('user changed notes');
+    
+    var txt = document.getElementById('txt_notes').value;
+
+    notes.setText(txt);
+
+
+}
+
+
+function user_changed_color(ths) {
+
+    console.log('user changed color');
+    
+    var new_color = $(ths).attr('data-color');
+    var new_color_name = $(ths).attr('data-colorname');
+
+    color.setText(new_color);
+    
+    refresh_color();
+    
+}
+
+
+function user_added_accessory(ths) {
+    
+    var accessory_name = $(ths).text();
+    
+    
+    if ($("#car_stack img.overlay[data-name='" + accessory_name + "']").length > 0) {
+        return;
+    }
+    
+    
+    if (list.indexOf(accessory_name) < 0) {
+        list.push(accessory_name);
+    }
+    
+    refresh_accessories();
+    
+
+}
+
+
+function user_remove_accessory(ths) {
+    
+    var accessory_name = $('div.acc').eq(ths-1).text();
+
+
+    for (var i = 0; i < list.length; i++) {
+        if (list.get(i) == accessory_name) {
+            list.remove(i);
+            break;
+        }
+    }
+
+    
+
+    refresh_accessories();
+    
+
+}
+
+
+function user_clear_all_accessories() {
+
+    console.log('clear all');    
+    
+    list.removeRange(0 , list.length);
+    
+    refresh_accessories();
+    
+}
+
+
+
+
+
+function getUserNameFromSessionId(sessionId) {
+
+    return $(".user[data-sessionid='" + sessionId + "']").attr('data-name');
+    
+}
+
+</script>
+<!--<script type="text/javascript" src="https://apis.google.com/js/api.js"></script>-->
+<script src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" />
+</head>
+
+<body>
+
+<header>Build Your Accord</header>
+ <div id='main'>
+    <article>
+        <div class="acc" data-overlay="http://automobiles.honda.com/images/2014/accord-sedan/configurations/accessories/overlays/17-IN-CHROME-LOOK-ALLOY-WHEEL_ALLCOLORS_34FRONT.png" onclick="user_added_accessory(this);">Chrome Wheels</div>&nbsp;<a class="ex" href="javascript: user_remove_accessory(1);" style="display: none; float: left;">X</a>
+        <div class="acc" data-overlay="http://automobiles.honda.com/images/2014/accord-sedan/configurations/accessories/overlays/NOSE-MASK_ALLCOLORS_34FRONT.png" onclick="user_added_accessory(this);">Nose Mask</div>&nbsp;<a class="ex" href="javascript: user_remove_accessory(2);" style="display: none; float: left;">X</a>
+        <div class="acc" data-overlay="http://automobiles.honda.com/images/2014/accord-sedan/configurations/accessories/overlays/MOONROOF-VISOR_ALLCOLORS_34FRONT.png" onclick="user_added_accessory(this);">Moonroof Visor</div>&nbsp;<a class="ex" href="javascript: user_remove_accessory(3);" style="display: none; float: left;">X</a>
+        <div class="acc" data-overlay="http://automobiles.honda.com/images/2014/accord-sedan/configurations/accessories/overlays/FRONT-UNDERBODY-SPOILER_%CLR%_34FRONT.png" onclick="user_added_accessory(this);">Front Spoiler</div>&nbsp;<a class="ex" href="javascript: user_remove_accessory(4);" style="display: none; float: left;">X</a>
+        <div class="acc" onclick="user_clear_all_accessories();">Clear All</div>
+    </article>
+    <nav>
+        <div id="collaborators_view"></div>
+    </nav>
+    <aside>
+        <div id="car_stack" style="position: relative;">
+        <img src="" id="car_img" style="width: 80%;" data-color="" style="position: absolute; left: 0; top: 0;" />
+        </div>
+        <br /><br />
+        <span data-color="RE" class="clr" data-colorname="Red" style="display: block; width: 40px; height: 40px; border-radius: 5px; background-color: red; float: left; margin-left: 5px;" onclick="user_changed_color(this);" >&nbsp;</span>
+        <span data-color="BK" class="clr" data-colorname="Black" style="display: block; width: 40px; height: 40px; border-radius: 5px; background-color: black; float: left; margin-left: 5px;" onclick="user_changed_color(this);">&nbsp;</span>
+        <span data-color="MS" class="clr" data-colorname="Silver" style="display: block; width: 40px; height: 40px; border-radius: 5px; background-color: silver; float: left; margin-left: 5px;" onclick="user_changed_color(this);">&nbsp;</span>
+        <span data-color="WH" class="clr" data-colorname="White" style="display: block; width: 40px; height: 40px; border-radius: 5px; background-color: white; border: 1px solid #000; float: left; margin-left: 5px;" onclick="user_changed_color(this);">&nbsp;</span>
+    </aside>
+ </div>
+ <footer>
+    Notes<br />
+    <textarea rows="15" style="width: 90%;" name="txt_notes" id="txt_notes" onkeyup="user_changed_notes()"></textarea>    
+</footer>
+
+
+
+
+
+
+
+</body>
+</html>
